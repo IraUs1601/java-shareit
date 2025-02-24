@@ -8,60 +8,49 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleNotFoundException(NotFoundException e) {
+    public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException e) {
         log.warn("Not found error: {}", e.getMessage());
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<Map<String, String>> handleUnauthorizedException(UnauthorizedException e) {
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException e) {
         log.warn("Unauthorized error: {}", e.getMessage());
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<Map<String, String>> handleConflictException(ConflictException e) {
+    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException e) {
         log.warn("Conflict error: {}", e.getMessage());
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", e.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<Map<String, String>> handleMissingHeaderException(MissingRequestHeaderException e) {
+    public ResponseEntity<ErrorResponse> handleMissingHeaderException(MissingRequestHeaderException e) {
         log.warn("Missing request header: {}", e.getHeaderName());
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Required request header '" + e.getHeaderName() + "' is missing.");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("Required request header '" + e.getHeaderName() + "' is missing."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException e) {
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
         log.warn("Validation error: {}", e.getMessage());
-        Map<String, String> errors = new HashMap<>();
-        e.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        String errorMessage = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .reduce((msg1, msg2) -> msg1 + "; " + msg2)
+                .orElse("Validation failed");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(errorMessage));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneralException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleGeneralException(Exception e) {
         log.error("Unexpected error: {}", e.getMessage(), e);
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Unexpected error: " + e.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Unexpected error: " + e.getMessage()));
     }
 }
