@@ -5,9 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ItemDto {
+public class ItemShortDto {
     private Long id;
     private String name;
-    private String description;
-    private boolean available;
 }
