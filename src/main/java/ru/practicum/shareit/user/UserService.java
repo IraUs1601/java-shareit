@@ -10,6 +10,7 @@ import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,18 +31,29 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (dto.getEmail() != null && !dto.getEmail().equals(user.getEmail())) {
-            if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-                throw new ConflictException("Email already exists: " + dto.getEmail());
+        boolean isUpdated = false;
+
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+            String newEmail = dto.getEmail().trim();
+            if (!newEmail.equals(user.getEmail())) {
+                Optional<User> existingUser = userRepository.findByEmail(newEmail);
+                if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                    throw new ConflictException("Email already exists: " + newEmail);
+                }
+                user.setEmail(newEmail);
+                isUpdated = true;
             }
-            user.setEmail(dto.getEmail());
         }
 
-        if (dto.getName() != null) {
-            user.setName(dto.getName());
+        if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
+            String newName = dto.getName().trim();
+            if (!newName.equals(user.getName())) {
+                user.setName(newName);
+                isUpdated = true;
+            }
         }
 
-        return UserMapper.toUserDto(user);
+        return isUpdated ? UserMapper.toUserDto(userRepository.save(user)) : UserMapper.toUserDto(user);
     }
 
     public UserDto getUser(Long id) {
@@ -57,6 +69,6 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        userRepository.delete(id);
+        userRepository.deleteById(id);
     }
 }
