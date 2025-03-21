@@ -80,7 +80,9 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Item not found"));
 
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now());
+                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now().minusHours(2));
+
+        System.out.println(LocalDateTime.now().minusHours(2));
 
         if (bookings.isEmpty()) {
             throw new ValidationException("User must have booked this item to leave a comment.");

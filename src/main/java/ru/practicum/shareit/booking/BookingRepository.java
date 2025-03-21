@@ -28,7 +28,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.booker.id = :userId AND b.item.id = :itemId " +
             "AND b.end <= :adjustedNow AND b.status = 'APPROVED' ORDER BY b.end DESC")
     List<Booking> findPastBookingsByUserAndItem(@Param("userId") Long userId, @Param("itemId") Long itemId,
-            @Param("adjustedNow") LocalDateTime adjustedNow);
+                                                @Param("adjustedNow") LocalDateTime adjustedNow);
 
     @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId AND b.start < :now ORDER BY b.start DESC LIMIT 1")
     Optional<Booking> findLastBooking(@Param("itemId") Long itemId, @Param("now") LocalDateTime now);
@@ -36,9 +36,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId AND b.start > :now ORDER BY b.start ASC LIMIT 1")
     Optional<Booking> findNextBooking(@Param("itemId") Long itemId, @Param("now") LocalDateTime now);
 
-    @Query("SELECT b FROM Booking b WHERE b.booker.id = :userId AND b.item.id = :itemId " +
-            "AND b.status = :status AND b.end < :now")
+    @Query("select b from Booking b left join fetch b.item AS i where i.id = :itemId " +
+            "and b.booker.id = :userId and b.end < :now and b.status = :status")
     List<Booking> findByBookerIdAndItemIdAndStatusAndEndBefore(@Param("userId") Long userId, @Param("itemId") Long itemId,
-            @Param("status") Booking.BookingStatus status, @Param("now") LocalDateTime now
+                                                               @Param("status") Booking.BookingStatus status, @Param("now") LocalDateTime now
     );
 }
