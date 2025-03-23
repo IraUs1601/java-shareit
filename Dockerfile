@@ -1,9 +1,5 @@
-FROM eclipse-temurin:21-jdk
+FROM amazoncorretto:21
 
-WORKDIR /app
+COPY target/*.jar application.jar
 
-COPY target/*.jar app.jar
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx2048M", "-jar", "/application.jar"]

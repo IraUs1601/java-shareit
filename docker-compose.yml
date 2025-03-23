@@ -2,32 +2,49 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:16.1
     container_name: postgres-shareit
     restart: always
-    environment:
-      POSTGRES_DB: shareit
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
     ports:
-      - "6432:5432"
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=shareit
+      - POSTGRES_USER=sa
+      - POSTGRES_PASSWORD=password
+      - TZ=Europe/Moscow
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   app:
-    build: .
+    image: docker-spring-boot-postgres:latest
+    build:
+      context: .
     container_name: shareit-app
     restart: always
     depends_on:
       - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shareit
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: password
-      TZ: Europe/Moscow
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+      - TZ=Europe/Moscow
     ports:
       - "8080:8080"
+    networks:
+      - app-network
 
 volumes:
   pgdata:
+
+networks:
+  app-network:
+    driver: bridge
