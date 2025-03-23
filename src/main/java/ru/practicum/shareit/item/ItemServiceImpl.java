@@ -1,7 +1,6 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
@@ -18,6 +17,7 @@ import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
+import ru.practicum.shareit.config.CommentProperties;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,9 +34,7 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentRepository;
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
-
-    @Value("${app.comment.delay-hours:0}")
-    private int commentDelayHours;
+    private final CommentProperties commentProperties;
 
     @Override
     public ItemDto createItem(ItemCreateDto dto, Long userId) {
@@ -84,16 +82,15 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Item not found"));
 
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now().minusHours(commentDelayHours));
+                userId, itemId, Booking.BookingStatus.APPROVED,
+                LocalDateTime.now().minusHours(commentProperties.getDelayHours()));
 
         if (bookings.isEmpty()) {
             throw new ValidationException("User must have booked this item to leave a comment.");
         }
 
         Comment comment = new Comment(null, dto.getText(), item, user, LocalDateTime.now());
-        comment = commentRepository.save(comment);
-
-        return CommentMapper.toCommentDto(comment);
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
 
     @Override
