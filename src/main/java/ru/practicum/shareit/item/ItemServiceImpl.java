@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
@@ -17,7 +18,6 @@ import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
-import ru.practicum.shareit.config.CommentProperties;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,7 +34,9 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentRepository;
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
-    private final CommentProperties commentProperties;
+
+    @Value("${app.comment.delay-hours:0}")
+    private int commentDelayHours;
 
     @Override
     public ItemDto createItem(ItemCreateDto dto, Long userId) {
@@ -81,16 +83,19 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Item not found"));
 
+        LocalDateTime commentAllowedTime = LocalDateTime.now().minusHours(commentDelayHours);
+
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, Booking.BookingStatus.APPROVED,
-                LocalDateTime.now().minusHours(commentProperties.getDelayHours()));
+                userId, itemId, Booking.BookingStatus.APPROVED, commentAllowedTime);
 
         if (bookings.isEmpty()) {
             throw new ValidationException("User must have booked this item to leave a comment.");
         }
 
         Comment comment = new Comment(null, dto.getText(), item, user, LocalDateTime.now());
-        return CommentMapper.toCommentDto(commentRepository.save(comment));
+        comment = commentRepository.save(comment);
+
+        return CommentMapper.toCommentDto(comment);
     }
 
     @Override
