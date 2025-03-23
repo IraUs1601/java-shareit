@@ -12,6 +12,7 @@ jobs:
 
     env:
       TZ: Europe/Moscow
+      APP_COMMENT_DELAY_HOURS: 2
 
     services:
       postgres:
