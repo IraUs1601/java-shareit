@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
@@ -33,6 +34,9 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentRepository;
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
+
+    @Value("${app.comment.delay-hours:0}")
+    private int commentDelayHours;
 
     @Override
     public ItemDto createItem(ItemCreateDto dto, Long userId) {
@@ -80,9 +84,7 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Item not found"));
 
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now().minusHours(2));
-
-        System.out.println(LocalDateTime.now().minusHours(2));
+                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now().minusHours(commentDelayHours));
 
         if (bookings.isEmpty()) {
             throw new ValidationException("User must have booked this item to leave a comment.");
