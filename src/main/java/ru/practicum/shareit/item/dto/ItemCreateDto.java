@@ -6,12 +6,14 @@ import lombok.Data;
 
 @Data
 public class ItemCreateDto {
-    @NotBlank
+    @NotBlank(message = "Name cannot be blank")
     private String name;
 
-    @NotBlank
+    @NotBlank(message = "Description cannot be blank")
     private String description;
 
-    @NotNull
+    @NotNull(message = "Availability must be specified")
     private Boolean available;
+
+    private Long requestId;
 }
