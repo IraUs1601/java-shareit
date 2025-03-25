@@ -49,7 +49,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public List<ItemRequestDto> getUserRequests(Long requestorId) {
-        return itemRequestRepository.findByRequestorId(requestorId).stream()
+        return itemRequestRepository.findByRequestorIdOrderByCreatedDesc(requestorId).stream()
                 .map(request -> {
                     List<Item> items = itemRepository.findByRequest(request);
                     return ItemRequestMapper.toItemRequestDto(request, items);
@@ -58,8 +58,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     @Override
-    public List<ItemRequestDto> getAllRequests() {
-        return itemRequestRepository.findAll().stream()
+    public List<ItemRequestDto> getAllRequests(Long userId) {
+        return itemRequestRepository.findAllExcludingUser(userId).stream()
                 .map(request -> {
                     List<Item> items = itemRepository.findByRequest(request);
                     return ItemRequestMapper.toItemRequestDto(request, items);

@@ -11,6 +11,8 @@ import ru.practicum.shareit.item.dto.*;
 
 import java.util.List;
 
+import static ru.practicum.shareit.util.Headers.USER_ID;
+
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
@@ -20,14 +22,14 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDto> createItem(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @Valid @RequestBody ItemCreateDto dto) {
         return ResponseEntity.ok(itemService.createItem(dto, userId));
     }
 
     @PostMapping("/{itemId}/comment")
     public ResponseEntity<CommentDto> addComment(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @PathVariable Long itemId,
             @Valid @RequestBody CommentCreateDto commentDto) {
         return ResponseEntity.ok(itemService.addComment(userId, itemId, commentDto));
@@ -35,7 +37,7 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItemDto> getItem(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @PathVariable Long id) {
         return ResponseEntity.ok(itemService.getItem(userId, id));
     }
@@ -67,7 +69,7 @@ public class ItemController {
 
     @PatchMapping("/{itemId}")
     public ResponseEntity<ItemDto> updateItem(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @PathVariable Long itemId,
             @RequestBody ItemUpdateDto dto) {
         return ResponseEntity.ok(itemService.updateItem(itemId, dto, userId));
@@ -75,7 +77,7 @@ public class ItemController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @PathVariable Long id) {
         itemService.deleteItem(id, userId);
         return ResponseEntity.noContent().build();

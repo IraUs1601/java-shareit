@@ -10,6 +10,8 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 
 import java.util.List;
 
+import static ru.practicum.shareit.util.Headers.USER_ID;
+
 @RestController
 @RequestMapping("/bookings")
 @RequiredArgsConstructor
@@ -19,28 +21,28 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingDto> createBooking(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @Valid @RequestBody BookingCreateDto dto) {
         return ResponseEntity.ok(bookingService.createBooking(dto, userId));
     }
 
     @GetMapping("/{bookingId}")
     public ResponseEntity<BookingDto> getBooking(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @PathVariable Long bookingId) {
         return ResponseEntity.ok(bookingService.getBooking(bookingId, userId));
     }
 
     @GetMapping
     public ResponseEntity<List<BookingDto>> getBookings(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @RequestParam(defaultValue = "ALL") String state) {
         return ResponseEntity.ok(bookingService.getBookings(userId, state));
     }
 
     @PatchMapping("/{bookingId}")
     public ResponseEntity<BookingDto> approveBooking(
-            @RequestHeader("X-Sharer-User-Id") Long ownerId,
+            @RequestHeader(USER_ID) Long ownerId,
             @PathVariable Long bookingId,
             @RequestParam boolean approved) {
         return ResponseEntity.ok(bookingService.approveBooking(bookingId, ownerId, approved));
@@ -48,7 +50,7 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}/cancel")
     public ResponseEntity<BookingDto> cancelBooking(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID) Long userId,
             @PathVariable Long bookingId) {
         return ResponseEntity.ok(bookingService.cancelBooking(bookingId, userId));
     }

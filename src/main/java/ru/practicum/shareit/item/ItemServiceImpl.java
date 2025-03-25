@@ -1,16 +1,13 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
-import ru.practicum.shareit.booking.BookingService;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.UnauthorizedException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
@@ -33,10 +30,6 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRequestRepository itemRequestRepository;
     private final CommentRepository commentRepository;
     private final BookingRepository bookingRepository;
-    private final BookingService bookingService;
-
-    @Value("${app.comment.delay-hours:0}")
-    private int commentDelayHours;
 
     @Override
     public ItemDto createItem(ItemCreateDto dto, Long userId) {
@@ -83,14 +76,8 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Item not found"));
 
-        LocalDateTime commentAllowedTime = LocalDateTime.now().minusHours(commentDelayHours);
-
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, Booking.BookingStatus.APPROVED, commentAllowedTime);
-
-        if (bookings.isEmpty()) {
-            throw new ValidationException("User must have booked this item to leave a comment.");
-        }
+                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now());
 
         Comment comment = new Comment(null, dto.getText(), item, user, LocalDateTime.now());
         comment = commentRepository.save(comment);

@@ -126,15 +126,4 @@ public class BookingService {
         booking.setStatus(Booking.BookingStatus.CANCELED);
         return BookingMapper.toBookingDto(bookingRepository.save(booking));
     }
-
-    public void addCommentCheck(Long userId, Long itemId) {
-        List<Booking> allBookings = bookingRepository.findByBookerIdOrderByStartDesc(userId);
-
-        LocalDateTime adjustedNow = LocalDateTime.now().withNano(0).plusSeconds(2);
-        List<Booking> pastBookings = bookingRepository.findPastBookingsByUserAndItem(userId, itemId, adjustedNow);
-
-        if (pastBookings.isEmpty()) {
-            throw new ValidationException("User must have booked this item to leave a comment.");
-        }
-    }
 }
