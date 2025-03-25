@@ -8,6 +8,7 @@ import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.UnauthorizedException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
@@ -77,7 +78,12 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Item not found"));
 
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now());
+                userId, itemId, Booking.BookingStatus.APPROVED, LocalDateTime.now()
+        );
+
+        if (bookings.isEmpty()) {
+            throw new ValidationException("User must have booked this item to leave a comment.");
+        }
 
         Comment comment = new Comment(null, dto.getText(), item, user, LocalDateTime.now());
         comment = commentRepository.save(comment);
@@ -96,13 +102,6 @@ public class ItemServiceImpl implements ItemService {
         }
         return itemRepository.findAllByOwnerId(ownerId)
                 .stream()
-                .map(ItemMapper::toItemDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ItemDto> getUserItems(Long userId) {
-        return itemRepository.findAllByOwnerId(userId).stream()
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
     }
