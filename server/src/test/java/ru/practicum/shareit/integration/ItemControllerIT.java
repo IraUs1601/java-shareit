@@ -32,27 +32,37 @@ public class ItemControllerIT {
         var requestBuilder = MockMvcRequestBuilders.post("/items")
                 .header("X-Sharer-User-Id", userId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {"id": 1,
-                     "name": "Какой-то item",
-                     "description": "description",
-                     "available": "true",
-                     "requestId": 1}""");
+                .content(
+                        String.join("\n",
+                                "{",
+                                "  \"id\": 1,",
+                                "  \"name\": \"Какой-то item\",",
+                                "  \"description\": \"description\",",
+                                "  \"available\": \"true\",",
+                                "  \"requestId\": 1",
+                                "}"
+                        )
+                );
 
         this.mockMvc.perform(requestBuilder)
                 .andDo(print())
                 .andExpectAll(
                         status().isOk(),
                         content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON),
-                        content().json("""
-                            {"id": 1,
-                             "name": "Какой-то item",
-                             "description": "description",
-                             "available": true,
-                             "requestId": 1,
-                             "lastBooking": null,
-                             "nextBooking": null,
-                             "comments": []}""")
+                        content().json(
+                                String.join("\n",
+                                        "{",
+                                        "  \"id\": 1,",
+                                        "  \"name\": \"Какой-то item\",",
+                                        "  \"description\": \"description\",",
+                                        "  \"available\": true,",
+                                        "  \"requestId\": 1,",
+                                        "  \"lastBooking\": null,",
+                                        "  \"nextBooking\": null,",
+                                        "  \"comments\": []",
+                                        "}"
+                                )
+                        )
                 );
     }
 }
