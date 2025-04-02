@@ -33,8 +33,11 @@ public class ItemControllerIT {
                 .header("X-Sharer-User-Id", userId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                {"id":1,"name":"Какой-то item","description":"description","available":"true","requestId":1}
-            """);
+                    {"id": 1,
+                     "name": "Какой-то item",
+                     "description": "description",
+                     "available": "true",
+                     "requestId": 1}""");
 
         this.mockMvc.perform(requestBuilder)
                 .andDo(print())
@@ -42,8 +45,14 @@ public class ItemControllerIT {
                         status().isOk(),
                         content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON),
                         content().json("""
-                    {"id":1,"name":"Какой-то item","description":"description","available":true,"requestId":1,"lastBooking":null,"nextBooking":null,"comments":[]}
-                """)
+                            {"id": 1,
+                             "name": "Какой-то item",
+                             "description": "description",
+                             "available": true,
+                             "requestId": 1,
+                             "lastBooking": null,
+                             "nextBooking": null,
+                             "comments": []}""")
                 );
     }
 }
