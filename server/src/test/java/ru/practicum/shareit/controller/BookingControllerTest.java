@@ -221,6 +221,7 @@ public class BookingControllerTest {
         verifyNoMoreInteractions(this.bookingService);
 
     }
+
     @Test
     @DisplayName("Получение бронирований для владельца - все состояния")
     void getBookingsForOwner_ReturnList() {
