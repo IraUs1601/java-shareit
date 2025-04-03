@@ -97,9 +97,9 @@ public class BookingControllerTest {
     void getBookings_AllStates_ReturnList() {
         long userId = 1L;
         String state = "ALL";
-        List<BookingDto> expectedList = List.of(createTestBookingDto(1L), createTestBookingDto(2L));
+        List<BookingDto> expectedList = createExpectedBookingsList();
 
-        doReturn(List.of(createTestBookingDto(1L), createTestBookingDto(2L)))
+        doReturn(expectedList)
                 .when(this.bookingService)
                 .getBookings(userId, state);
 
@@ -109,6 +109,17 @@ public class BookingControllerTest {
         assertEquals(expectedList, result.getBody());
         verify(this.bookingService).getBookings(userId, state);
         verifyNoMoreInteractions(this.bookingService);
+    }
+
+    private List<BookingDto> createExpectedBookingsList() {
+        LocalDateTime start1 = LocalDateTime.of(2025, 4, 4, 22, 0);
+        LocalDateTime end1 = start1.plusDays(1);
+        LocalDateTime start2 = LocalDateTime.of(2025, 4, 6, 10, 0);
+        LocalDateTime end2 = start2.plusDays(1);
+
+        BookingDto booking1 = new BookingDto(1L, start1, end1, null, null, Booking.BookingStatus.WAITING);
+        BookingDto booking2 = new BookingDto(2L, start2, end2, null, null, Booking.BookingStatus.WAITING);
+        return List.of(booking1, booking2);
     }
 
     @Test
