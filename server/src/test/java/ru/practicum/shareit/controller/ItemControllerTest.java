@@ -192,6 +192,23 @@ public class ItemControllerTest {
     }
 
     @Test
+    @DisplayName("Получение предметов пользователя - корректный ID")
+    void getUserItems_ValidId_ReturnsItems() {
+        String validId = "1";
+        List<ItemDto> expected = List.of(createTestItemDto(1L));
+
+        doReturn(expected)
+                .when(itemService)
+                .getItems(1L);
+
+        var result = itemController.getUserItems(validId);
+
+        assertTrue(result.getStatusCode().is2xxSuccessful());
+        assertEquals(expected, result.getBody());
+        verify(itemService).getItems(1L);
+    }
+
+    @Test
     @DisplayName("Поиск предметов - успешно")
     void searchItems_ValidQuery_ReturnsList() {
         String query = "test";

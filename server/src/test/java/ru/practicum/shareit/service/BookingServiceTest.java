@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,6 +22,7 @@ import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,6 +84,20 @@ public class BookingServiceTest {
     }
 
     @Test
+    @DisplayName("Создание бронирования — попытка забронировать свой предмет")
+    void createBooking_ownItem() {
+        item.setOwner(user);
+        BookingCreateDto dto = new BookingCreateDto(item.getId(),
+                LocalDateTime.now().plusDays(1),
+                LocalDateTime.now().plusDays(2));
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+
+        assertThrows(UnauthorizedException.class, () -> bookingService.createBooking(dto, user.getId()));
+    }
+
+    @Test
     @DisplayName("Получение бронирования - успех")
     void getBooking_success() {
         Booking booking = Booking.builder()
@@ -118,6 +135,107 @@ public class BookingServiceTest {
         assertThrows(UnauthorizedException.class, () -> bookingService.getBooking(1L, user.getId()));
     }
 
+    @ParameterizedTest
+    @DisplayName("Получение бронирований пользователя по состоянию")
+    @ValueSource(strings = {"ALL", "CURRENT", "PAST", "FUTURE", "WAITING", "REJECTED", "UNKNOWN"})
+    void getBookings_byState(String state) {
+        long userId = user.getId();
+        when(userRepository.existsById(userId)).thenReturn(true);
+        List<Booking> mockBookings = List.of(
+                Booking.builder().id(1L).booker(user).item(item).start(LocalDateTime.now().plusDays(1)).build()
+        );
+
+        switch (state.toUpperCase()) {
+            case "CURRENT" -> when(bookingRepository.findCurrentBookings(eq(userId), any())).thenReturn(mockBookings);
+            case "PAST" -> when(bookingRepository.findPastBookings(eq(userId), any())).thenReturn(mockBookings);
+            case "FUTURE" -> when(bookingRepository.findFutureBookings(eq(userId), any())).thenReturn(mockBookings);
+            case "WAITING" -> when(bookingRepository.findByStatusAndBookerIdOrderByStartDesc(Booking.BookingStatus.WAITING, userId)).thenReturn(mockBookings);
+            case "REJECTED" -> when(bookingRepository.findByStatusAndBookerIdOrderByStartDesc(Booking.BookingStatus.REJECTED, userId)).thenReturn(mockBookings);
+            default -> when(bookingRepository.findByBookerIdOrderByStartDesc(userId)).thenReturn(mockBookings);
+        }
+
+        List<BookingDto> result = bookingService.getBookings(userId, state);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @ParameterizedTest
+    @DisplayName("Получение списка бронирований пользователя по состоянию")
+    @ValueSource(strings = {"ALL", "CURRENT", "PAST", "FUTURE", "WAITING", "REJECTED", "UNKNOWN"})
+    void getBookings_byState_shouldReturnList(String state) {
+        long userId = user.getId();
+        Booking booking = Booking.builder()
+                .id(1L)
+                .item(item)
+                .booker(user)
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .status(Booking.BookingStatus.WAITING)
+                .build();
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+
+        switch (state.toUpperCase()) {
+            case "CURRENT" ->
+                    when(bookingRepository.findCurrentBookings(eq(userId), any())).thenReturn(List.of(booking));
+            case "PAST" ->
+                    when(bookingRepository.findPastBookings(eq(userId), any())).thenReturn(List.of(booking));
+            case "FUTURE" ->
+                    when(bookingRepository.findFutureBookings(eq(userId), any())).thenReturn(List.of(booking));
+            case "WAITING" ->
+                    when(bookingRepository.findByStatusAndBookerIdOrderByStartDesc(Booking.BookingStatus.WAITING, userId)).thenReturn(List.of(booking));
+            case "REJECTED" ->
+                    when(bookingRepository.findByStatusAndBookerIdOrderByStartDesc(Booking.BookingStatus.REJECTED, userId)).thenReturn(List.of(booking));
+            default ->
+                    when(bookingRepository.findByBookerIdOrderByStartDesc(userId)).thenReturn(List.of(booking));
+        }
+
+        List<BookingDto> result = bookingService.getBookings(userId, state);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(booking.getId(), result.get(0).getId());
+    }
+
+    @ParameterizedTest
+    @DisplayName("Получение списка бронирований для владельца по состоянию")
+    @ValueSource(strings = {"ALL", "CURRENT", "PAST", "FUTURE", "WAITING", "REJECTED", "UNKNOWN"})
+    void getBookingsForOwner_byState_shouldReturnList(String state) {
+        long ownerId = owner.getId();
+        Booking booking = Booking.builder()
+                .id(1L)
+                .item(item)
+                .booker(user)
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .status(Booking.BookingStatus.WAITING)
+                .build();
+
+        when(userRepository.existsById(ownerId)).thenReturn(true);
+
+        switch (state.toUpperCase()) {
+            case "CURRENT" ->
+                    when(bookingRepository.findCurrentBookingsByOwner(eq(ownerId), any())).thenReturn(List.of(booking));
+            case "PAST" ->
+                    when(bookingRepository.findPastBookingsByOwner(eq(ownerId), any())).thenReturn(List.of(booking));
+            case "FUTURE" ->
+                    when(bookingRepository.findFutureBookingsByOwner(eq(ownerId), any())).thenReturn(List.of(booking));
+            case "WAITING" ->
+                    when(bookingRepository.findByStatusAndItemOwnerIdOrderByStartDesc(Booking.BookingStatus.WAITING, ownerId)).thenReturn(List.of(booking));
+            case "REJECTED" ->
+                    when(bookingRepository.findByStatusAndItemOwnerIdOrderByStartDesc(Booking.BookingStatus.REJECTED, ownerId)).thenReturn(List.of(booking));
+            default ->
+                    when(bookingRepository.findByItemOwnerIdOrderByStartDesc(ownerId)).thenReturn(List.of(booking));
+        }
+
+        List<BookingDto> result = bookingService.getBookingsForOwner(ownerId, state);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(booking.getId(), result.get(0).getId());
+    }
+
     @Test
     @DisplayName("Подтверждение бронирования - успех")
     void approveBooking_success() {
@@ -148,6 +266,24 @@ public class BookingServiceTest {
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
 
         assertThrows(ValidationException.class, () -> bookingService.approveBooking(1L, owner.getId(), true));
+    }
+
+    @Test
+    @DisplayName("Подтверждение бронирования - не владелец вещи")
+    void approveBooking_notOwner() {
+        Booking booking = Booking.builder()
+                .id(1L)
+                .item(item)
+                .booker(user)
+                .status(Booking.BookingStatus.WAITING)
+                .build();
+
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        long notOwnerId = 99L;
+
+        assertThrows(UnauthorizedException.class,
+                () -> bookingService.approveBooking(1L, notOwnerId, true));
     }
 
     @Test

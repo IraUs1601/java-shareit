@@ -92,6 +92,16 @@ public class ItemRequestServiceImplTest {
     }
 
     @Test
+    @DisplayName("Создание запроса - null в описании")
+    void createRequest_nullDescription_throws() {
+        ItemRequestCreateDto dto = new ItemRequestCreateDto();
+        dto.setDescription(null);
+
+        assertThrows(ValidationException.class, () -> itemRequestService.createRequest(dto, 1L));
+        verifyNoInteractions(itemRequestRepository);
+    }
+
+    @Test
     @DisplayName("Получение всех запросов пользователя")
     void getUserRequests_returnsList() {
         when(itemRequestRepository.findByRequestorIdOrderByCreatedDesc(1L)).thenReturn(List.of(request));
@@ -104,6 +114,17 @@ public class ItemRequestServiceImplTest {
     }
 
     @Test
+    @DisplayName("Получение всех запросов пользователя - пустой список")
+    void getUserRequests_empty_returnsEmptyList() {
+        when(itemRequestRepository.findByRequestorIdOrderByCreatedDesc(1L)).thenReturn(List.of());
+
+        List<ItemRequestDto> result = itemRequestService.getUserRequests(1L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     @DisplayName("Получение всех запросов - кроме пользователя")
     void getAllRequests_excludingUser_returnsList() {
         when(itemRequestRepository.findAllExcludingUser(1L)).thenReturn(List.of(request));
@@ -113,6 +134,30 @@ public class ItemRequestServiceImplTest {
 
         assertEquals(1, result.size());
         assertEquals(request.getId(), result.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех запросов - кроме пользователя - пустой список")
+    void getAllRequests_onlyUserRequests_returnsEmptyList() {
+        when(itemRequestRepository.findAllExcludingUser(1L)).thenReturn(List.of());
+
+        List<ItemRequestDto> result = itemRequestService.getAllRequests(1L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Получение запроса по id - у запроса нет связанных предметов")
+    void getRequestById_noItems_success() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(itemRequestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(itemRepository.findByRequest(request)).thenReturn(List.of());
+
+        ItemRequestDto result = itemRequestService.getRequestById(1L, 1L);
+
+        assertNotNull(result);
+        assertEquals(0, result.getItems().size());
     }
 
     @Test

@@ -24,4 +24,20 @@ public class ErrorResponseJsonTest {
 
         assertThat(json).contains("\"error\":\"Ошибка валидации\"");
     }
+
+    @Test
+    @DisplayName("equals и hashCode работают корректно (по содержимому)")
+    void errorResponseEqualsHashCode() {
+        ErrorResponse e1 = new ErrorResponse("Ошибка");
+        ErrorResponse e2 = new ErrorResponse("Ошибка");
+
+        assertThat(e1.getError()).isEqualTo(e2.getError());
+        assertThat(e1.getError().hashCode()).isEqualTo(e2.getError().hashCode());
+    }
+
+    @Test
+    void getError_shouldReturnErrorMessage() {
+        ErrorResponse error = new ErrorResponse("Test error");
+        assertThat(error.getError()).isEqualTo("Test error");
+    }
 }

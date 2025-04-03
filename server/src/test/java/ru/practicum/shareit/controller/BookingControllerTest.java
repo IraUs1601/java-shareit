@@ -97,32 +97,16 @@ public class BookingControllerTest {
     void getBookings_AllStates_ReturnList() {
         long userId = 1L;
         String state = "ALL";
+        List<BookingDto> expectedList = List.of(createTestBookingDto(1L), createTestBookingDto(2L));
 
-        BookingDto booking1 = createTestBookingDto(1L);
-        BookingDto booking2 = createTestBookingDto(2L);
-
-        List<BookingDto> expectedList = List.of(booking1, booking2);
-
-        doReturn(expectedList)
+        doReturn(List.of(createTestBookingDto(1L), createTestBookingDto(2L)))
                 .when(this.bookingService)
                 .getBookings(userId, state);
 
         var result = bookingController.getBookings(userId, state);
 
         assertTrue(result.getStatusCode().is2xxSuccessful());
-
-        List<BookingDto> actualList = result.getBody();
-        assertNotNull(actualList);
-        assertEquals(expectedList.size(), actualList.size());
-
-        for (int i = 0; i < expectedList.size(); i++) {
-            BookingDto expected = expectedList.get(i);
-            BookingDto actual = actualList.get(i);
-
-            assertEquals(expected.getId(), actual.getId());
-            assertEquals(expected.getStatus(), actual.getStatus());
-        }
-
+        assertEquals(expectedList, result.getBody());
         verify(this.bookingService).getBookings(userId, state);
         verifyNoMoreInteractions(this.bookingService);
     }
@@ -236,6 +220,24 @@ public class BookingControllerTest {
         verify(this.bookingService).getBookings(userId, state);
         verifyNoMoreInteractions(this.bookingService);
 
+    }
+    @Test
+    @DisplayName("Получение бронирований для владельца - все состояния")
+    void getBookingsForOwner_ReturnList() {
+        long ownerId = 1L;
+        String state = "ALL";
+        List<BookingDto> expectedList = List.of(createTestBookingDto(1L));
+
+        doReturn(expectedList)
+                .when(bookingService)
+                .getBookingsForOwner(ownerId, state);
+
+        var result = bookingController.getBookingsForOwner(ownerId, state);
+
+        assertTrue(result.getStatusCode().is2xxSuccessful());
+        assertEquals(expectedList, result.getBody());
+        verify(bookingService).getBookingsForOwner(ownerId, state);
+        verifyNoMoreInteractions(bookingService);
     }
 
     @Test

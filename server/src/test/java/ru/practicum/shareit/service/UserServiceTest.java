@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.UserService;
@@ -66,6 +67,30 @@ class UserServiceTest {
         assertThrows(ConflictException.class, () -> userService.createUser(dto));
     }
 
+    @DisplayName("Создание пользователя — email пустой")
+    @Test
+    void createUser_blankEmail_throwsValidation() {
+        UserCreateDto dto = new UserCreateDto();
+        dto.setEmail("   ");
+        assertThrows(ValidationException.class, () -> userService.createUser(dto));
+    }
+
+    @DisplayName("Создание пользователя — email null")
+    @Test
+    void createUser_nullEmail_throwsValidation() {
+        UserCreateDto dto = new UserCreateDto();
+        dto.setEmail(null);
+        assertThrows(ValidationException.class, () -> userService.createUser(dto));
+    }
+
+    @DisplayName("Создание пользователя — email без '@'")
+    @Test
+    void createUser_invalidEmailFormat_throwsValidation() {
+        UserCreateDto dto = new UserCreateDto();
+        dto.setEmail("invalidEmail.com");
+        assertThrows(ValidationException.class, () -> userService.createUser(dto));
+    }
+
     @Test
     @DisplayName("Обновление пользователя - успешно")
     void updateUser_validData_success() {
@@ -102,6 +127,24 @@ class UserServiceTest {
         assertThrows(ConflictException.class, () -> userService.updateUser(userId, dto));
     }
 
+    @DisplayName("Обновление пользователя — без изменений")
+    @Test
+    void updateUser_noChanges_returnsSameUser() {
+        Long userId = 1L;
+        UserUpdateDto dto = new UserUpdateDto();
+
+        User user = new User(userId, "Name", "email@example.com");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        UserDto result = userService.updateUser(userId, dto);
+
+        assertThat(result.getEmail()).isEqualTo("email@example.com");
+        assertThat(result.getName()).isEqualTo("Name");
+
+        verify(userRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("Получение пользователя по ID - найден")
     void getUser_found_success() {
@@ -134,6 +177,16 @@ class UserServiceTest {
         List<UserDto> users = userService.getAllUsers();
 
         assertThat(users).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Получение всех пользователей — пустой список")
+    void getAllUsers_emptyList() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        List<UserDto> result = userService.getAllUsers();
+
+        assertThat(result).isEmpty();
     }
 
     @Test

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.exception.UnauthorizedException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -14,10 +15,12 @@ import ru.practicum.shareit.item.CommentRepository;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.ItemServiceImpl;
 import ru.practicum.shareit.item.dto.*;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,6 +92,40 @@ class ItemServiceImplTest {
 
         verify(itemRepository).findById(1L);
         verify(commentRepository).findByItemId(1L);
+    }
+
+    @Test
+    @DisplayName("getItems() должен вернуть список вещей владельца")
+    void getItems_shouldReturnOwnedItems() {
+        when(itemRepository.findAllByOwnerId(1L)).thenReturn(List.of(item));
+
+        List<ItemDto> result = itemService.getItems(1L);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(item.getId(), result.get(0).getId());
+        verify(itemRepository).findAllByOwnerId(1L);
+    }
+
+    @Test
+    @DisplayName("addComment() должен сохранить комментарий, если пользователь бронировал вещь")
+    void addComment_shouldAddSuccessfully() {
+        CommentCreateDto dto = new CommentCreateDto();
+        dto.setText("Great item!");
+
+        Comment savedComment = new Comment(1L, "Great item!", item, owner, LocalDateTime.now());
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(bookingRepository.findByBookerIdAndItemIdAndStatusAndEndBefore(anyLong(), anyLong(), any(), any()))
+                .thenReturn(List.of(mock(Booking.class)));
+        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
+
+        CommentDto result = itemService.addComment(1L, 1L, dto);
+
+        assertNotNull(result);
+        assertEquals("Great item!", result.getText());
+        verify(commentRepository).save(any(Comment.class));
     }
 
     @Test
